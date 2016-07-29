@@ -3,6 +3,7 @@
 AgeClassifier::AgeClassifier(bool high_performances)
 {
     this->high_performances = high_performances;
+
     if (!high_performances)
     {
         imwidth = 88; imheight= 88;
@@ -84,6 +85,8 @@ unsigned AgeClassifier::classify(Face &face, double &confidence) {
             prediction = classNumber.x;
         }
     }
+
+
     return prediction;
 }
 

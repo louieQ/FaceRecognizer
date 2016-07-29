@@ -11,33 +11,52 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 using namespace std;
 
+string getFileName(const string& s){
 
-string classifyAll(vector<Face> *faces, string parameters) {
+    char sep = '/';
+
+#ifdef _WIN32
+    sep = '\\';
+#endif
+
+    size_t i = s.rfind(sep, s.length());
+    if(i != string::npos){
+        return (s.substr(i+1, s.length()-i));
+    }
+
+    return("");
+
+}
+
+
+string classifyAll(vector<Face> *faces, string parameters, string file_name) {
 	string json = "";
 	double confidence;
 	for (vector<Face>::iterator i=faces->begin(); i != faces->end(); i++) {
 		json += "{ ";
+        json += "\"nome_file\": \"" + file_name + "\", ";
         Rect position = (*i).getPosition();
-        json += "position: [{ x:" + to_string(position.x) + ", y:" + to_string(position.y) + " }, " + "{ x:" + to_string(position.br().x) + ", y:" + to_string(position.br().y) + " }]";;
+        json += "\"position\": [{ x:" + to_string(position.x) + ", y:" + to_string(position.y) + " }, " + "{ x:" + to_string(position.br().x) + ", y:" + to_string(position.br().y) + " }]";;
 		if (parameters.find("-g") != std::string::npos) {
-			json += ", gender: [";
+            json += ", \"gender\": [";
 			GenderClassifier g;
 			g.classify((*i), confidence);
             ((*i).getGender()==Male) ? json+="\"male\", " : json+="\"female\", ";
             json += to_string(confidence) + "]";
 		}
 		if (parameters.find("-r") != std::string::npos) {
-			json += ", race: [";
+            json += ", \"race\": [";
 			RaceClassifier r;
 			r.classify((*i), confidence);
             ((*i).getRace()==Black) ? json+="\"black\", " : ((*i).getRace()==White) ? json+="\"white\", " : json +="\"asian\", ";
             json += to_string(confidence) + "]";
 		}
 		if (parameters.find("-a") != std::string::npos) {
-			json += ", age: [";
+            json += ", \"age\": [";
 			AgeClassifier a;
 			a.classify((*i), confidence);
             switch((*i).getAge()) {
@@ -60,7 +79,7 @@ int main(int argc, char *argv[])
 {
 	string json; // main parameter?
 	//
-	if (argc < 3) {
+    if (argc < 3) {
 		cerr << "Error: do you miss some arguments?" << endl;
 		return -1;
 	}
@@ -84,6 +103,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    string nome_file = getFileName(argv[2]);
+
 	// Biometrics recognition
 	Mat frame;
 	Scene scene;
@@ -93,7 +114,7 @@ int main(int argc, char *argv[])
         //Mat original = frame.clone();
         scene.detect(frame);
         faces = scene.getFaces();
-        json = classifyAll(faces, parameters);
+        json = classifyAll(faces, parameters, nome_file);
         // DELETE! IT'S JUST FOR TESTING
         cout << "These are the json objects: \n" << json << endl;
 	}
@@ -118,7 +139,7 @@ int main(int argc, char *argv[])
 	        Mat original = frame.clone();
 	        scene.detect(original);
 	        faces = scene.getFaces();
-	        json = classifyAll(faces, parameters);
+            json = classifyAll(faces, parameters, "");
             scene.draw(parameters);
 	        imshow("face_recognizer", original);
 	        char key = (char) waitKey(10);
@@ -126,6 +147,9 @@ int main(int argc, char *argv[])
 	            break;
 	    }
     }
-    //
+
+
+
+
     return 0;
 }
